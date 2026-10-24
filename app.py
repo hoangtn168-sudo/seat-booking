@@ -79,7 +79,7 @@ def save_data(df):
 df = load_data()
 
 st.title("HỆ THỐNG ĐĂNG KÝ CHỖ NGỒI VĂN PHÒNG")
-st.info("Hướng dẫn: Xem sơ đồ dạng bảng ma trận bên dưới -> Bấm nút vào ô ghế muốn chọn -> Điền thông tin ở khung đăng ký hiện ra.")
+st.info("Hướng dẫn: Xem sơ đồ dạng bảng ma trận bên dưới -> Bấm nút vào ô ghế trống muốn chọn -> Điền thông tin ở khung đăng ký hiện ra.")
 
 # --- HIỂN THỊ SƠ ĐỒ CHUNG TRỰC QUAN ---
 if os.path.exists(IMG_CHUNG):
@@ -111,15 +111,13 @@ def render_seat_box(row):
     
     if status == "XANH":
         st.markdown(f"""
-        <div style="border: 2px solid #28a745; background-color: #e8f5e9; padding: 6px; border-radius: 6px; text-align: center; margin-bottom: 4px; min-height: 80px;">
+        <div style="border: 2px solid #28a745; background-color: #e8f5e9; padding: 6px; border-radius: 6px; text-align: center; margin-bottom: 2px; min-height: 72px;">
             <b style="color: #155724; font-size: 13px;">{code}</b><br>
             <span style="color: #333; font-size: 11px; font-weight: bold;">{name}</span><br>
             <span style="color: #666; font-size: 9px; font-style: italic;">{bu}</span>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Đổi chỗ", key=f"change_{code}", use_container_width=True):
-            st.session_state['selected_seat'] = code
-            st.rerun()
+        st.markdown("<p style='text-align: center; font-size: 10px; color: #d9534f; font-weight: bold; margin: 0 0 5px 0;'>Liên hệ admin để đổi chỗ</p>", unsafe_allow_html=True)
             
     elif status == "VÀNG":
         st.markdown(f"""
@@ -238,10 +236,10 @@ with tab3:
             st.image(IMG_ZONE_C, caption="Sơ đồ chi tiết Zone C", use_container_width=True)
         st.markdown("---")
         
-    # Sơ đồ Zone C cố định chuẩn 10 cột, đảm bảo cột C-06/15/24 và C-07/16/25 thẳng hàng tuyệt đối
+    # Sơ đồ Zone C chuẩn: C-06, C-07 cách C-05 2 ô trống (2 cột trống), C-13 sát C-12, các cột C-06/15/24 và C-07/16/25 thẳng hàng
     rows_c_exact = [
-        [f"C-01", f"C-02", f"C-03", f"C-04", f"C-05", None, None, None, f"C-06", f"C-07"],
-        [f"C-08", f"C-09", f"C-10", f"C-11", f"C-12", None, f"C-13", f"C-14", f"C-15", f"C-16"],
+        [f"C-01", f"C-02", f"C-03", f"C-04", f"C-05", None, None, f"C-06", f"C-07", None],
+        [f"C-08", f"C-09", f"C-10", f"C-11", f"C-12", f"C-13", f"C-14", f"C-15", f"C-16", None],
         [f"C-17", f"C-18", f"C-19", f"C-20", f"C-21", f"C-22", f"C-23", f"C-24", f"C-25", None]
     ]
     
