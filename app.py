@@ -313,7 +313,7 @@ with tab_admin:
     admin_password = st.text_input("Nhập mật khẩu Admin để chỉnh sửa:", type="password", key="admin_pwd_input")
     
     # Mật khẩu quản trị mặc định bạn có thể đổi ở đây (VD: admin123)
-    if admin_password == "admin123":
+    if admin_password == "admin123@123":
         st.success("🔓 Đăng nhập Admin thành công! Bạn có thể chỉnh sửa trực tiếp thông tin các ghế bên dưới.")
         
         # Hiển thị bảng dữ liệu có thể chỉnh sửa trực tiếp (Data Editor)
