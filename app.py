@@ -5,6 +5,24 @@ import os
 # Cấu hình giao diện trang web rộng
 st.set_page_config(page_title="Hệ Thống Đăng Ký Chỗ Ngồi Online", layout="wide", initial_sidebar_state="expanded")
 
+# --- HÀM HỖ TRỢ ZOOM ẢNH BẰNG 2 NGÓN TAY TRÊN ĐIỆN THOẠI ---
+def enable_zoom_on_images():
+    st.markdown("""
+        <style>
+            /* Cho phép phóng to/thu nhỏ ảnh mượt mà trên mobile và desktop */
+            img {
+                transition: transform 0.25s ease;
+                cursor: zoom-in;
+            }
+            img:active {
+                transform: scale(2);
+                cursor: zoom-out;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+enable_zoom_on_images()
+
 FILE_PATH = "Danh_Sach_Cho_Ngoi.xlsx"
 
 # Đường dẫn các file ảnh sơ đồ tổng quan & chi tiết
@@ -79,12 +97,12 @@ def save_data(df):
 df = load_data()
 
 st.title("HỆ THỐNG ĐĂNG KÝ CHỖ NGỒI VĂN PHÒNG")
-st.info("Hướng dẫn: Xem sơ đồ dạng bảng ma trận bên dưới -> Bấm nút vào ô ghế trống muốn chọn -> Điền thông tin ở khung đăng ký hiện ra.")
+st.info("💡 **Hướng dẫn:** Trên điện thoại, bạn có thể **chạm và giữ (hoặc dùng 2 ngón tay)** vào ảnh sơ đồ bên dưới để phóng to xem chi tiết.")
 
 # --- HIỂN THỊ SƠ ĐỒ CHUNG TRỰC QUAN ---
 if os.path.exists(IMG_CHUNG):
-    with st.expander("Xem sơ đồ tổng quan văn phòng (Ảnh gốc)", expanded=False):
-        st.image(IMG_CHUNG, caption="Sơ đồ tổng quan toàn văn phòng", use_container_width=True)
+    with st.expander("🗺️ Xem sơ đồ tổng quan văn phòng (Ảnh gốc)", expanded=False):
+        st.image(IMG_CHUNG, caption="Sơ đồ tổng quan toàn văn phòng (Chạm giữ để phóng to)", use_container_width=True)
 
 # Xác định trạng thái của ghế dựa trên Ghi Chú và Họ Tên
 def get_status(row):
@@ -196,7 +214,7 @@ def get_seat_row(zone_name, seat_code):
 
 with tab1:
     if os.path.exists(IMG_ZONE_A):
-        with st.expander("Xem ảnh sơ đồ gốc Zone A"):
+        with st.expander("📷 Xem ảnh sơ đồ gốc Zone A (Phóng to được)"):
             st.image(IMG_ZONE_A, caption="Sơ đồ chi tiết Zone A", use_container_width=True)
         st.markdown("---")
     
@@ -210,7 +228,7 @@ with tab1:
 
 with tab2:
     if os.path.exists(IMG_ZONE_B):
-        with st.expander("Xem ảnh sơ đồ gốc Zone B"):
+        with st.expander("📷 Xem ảnh sơ đồ gốc Zone B (Phóng to được)"):
             st.image(IMG_ZONE_B, caption="Sơ đồ chi tiết Zone B", use_container_width=True)
         st.markdown("---")
         
@@ -232,11 +250,10 @@ with tab2:
 
 with tab3:
     if os.path.exists(IMG_ZONE_C):
-        with st.expander("Xem ảnh sơ đồ gốc Zone C"):
+        with st.expander("📷 Xem ảnh sơ đồ gốc Zone C (Phóng to được)"):
             st.image(IMG_ZONE_C, caption="Sơ đồ chi tiết Zone C", use_container_width=True)
         st.markdown("---")
         
-    # Sơ đồ Zone C chuẩn: C-06, C-07 cách C-05 2 ô trống (2 cột trống), C-13 sát C-12, các cột C-06/15/24 và C-07/16/25 thẳng hàng
     rows_c_exact = [
         [f"C-01", f"C-02", f"C-03", f"C-04", f"C-05", None, None, f"C-06", f"C-07", None],
         [f"C-08", f"C-09", f"C-10", f"C-11", f"C-12", f"C-13", f"C-14", f"C-15", f"C-16", None],
@@ -254,6 +271,6 @@ with tab3:
 
 # --- TẢI FILE EXCEL (Dành cho Quản trị viên) ---
 st.markdown("---")
-with st.expander("Dành cho Quản trị viên (Admin)"):
+with st.expander("🛠️ Dành cho Quản trị viên (Admin)"):
     with open(FILE_PATH, "rb") as f:
-        st.download_button("Tải File Excel Danh Sách Chỗ Ngồi", f, file_name="Danh_Sach_Cho_Ngoi_Cap_Nhat.xlsx")
+        st.download_button("📥 Tải File Excel Danh Sách Chỗ Ngồi", f, file_name="Danh_Sach_Cho_Ngoi_Cap_Nhat.xlsx")
