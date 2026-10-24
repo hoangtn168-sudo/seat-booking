@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # Cấu hình giao diện trang web rộng
-st.set_page_config(page_title="Hệ Thống Đăng Ký Chỗ Ngồi Online", layout="wide")
+st.set_page_config(page_title="Hệ Thống Đăng Ký Chỗ Ngồi Online", layout="wide", initial_sidebar_state="expanded")
 
 FILE_PATH = "Danh_Sach_Cho_Ngoi.xlsx"
 
@@ -13,7 +13,7 @@ IMG_ZONE_A = "zone_a.png"
 IMG_ZONE_B = "zone_b.png"
 IMG_ZONE_C = "zone_c.png"
 
-# Danh sách đầy đủ 9 phòng ban (BU) theo yêu cầu mới
+# Danh sách đầy đủ 9 phòng ban (BU)
 LIST_BU = [
     'IOT', 
     'C&D', 
@@ -39,7 +39,6 @@ def load_data():
         df_init = pd.DataFrame(seats)
         df_init.to_excel(FILE_PATH, index=False)
 
-    # Đọc file Excel với dtype=str để ngăn pandas tự động đổi LDAP thành kiểu số có .0
     df = pd.read_excel(FILE_PATH, dtype=str)
     
     column_mapping = {
@@ -61,7 +60,6 @@ def load_data():
         else:
             df[col] = ''
 
-    # Làm sạch triệt để cột LDAP ID (loại bỏ đuôi .0 nếu lỡ bị lưu dạng số)
     df['LDAP ID'] = df['LDAP ID'].apply(lambda x: x[:-2] if x.endswith('.0') else x)
 
     if 'Phân Khu' not in df.columns:
@@ -80,12 +78,14 @@ def save_data(df):
 
 df = load_data()
 
-st.title("📌 HỆ THỐNG ĐĂNG KÝ CHỖ NGỒI VĂN PHÒNG ONLINE")
-st.markdown("Xem sơ đồ tổng quan bên dưới, chọn tab phân khu và bấm vào ghế trống màu vàng để đăng ký.")
+st.title("📌 HỆ THỐNG ĐĂNG KÝ CHỖ NGỒI VĂN PHÒNG")
+
+# --- HƯỚNG DẪN TRỰC QUAN CHO NGƯỜI DÙNG ĐIỆN THOẠI ---
+st.info("💡 **Hướng dẫn:** Xem sơ đồ bên dưới $\rightarrow$ Chọn tab phân khu $\rightarrow$ Bấm nút **(Chọn)** $\rightarrow$ Điền thông tin ở khung đăng ký hiện ra.")
 
 # --- HIỂN THỊ SƠ ĐỒ CHUNG TRỰC QUAN ---
 if os.path.exists(IMG_CHUNG):
-    with st.expander("🗺️ XEM SƠ ĐỒ TỔNG QUAN VĂN PHÒNG (Bấm vào để mở/thu gọn)", expanded=False):
+    with st.expander("🗺️ XEM SƠ ĐỒ TỔNG QUAN VĂN PHÒNG (Bấm để xem ảnh lớn)", expanded=True):
         st.image(IMG_CHUNG, caption="Sơ đồ tổng quan toàn văn phòng", use_container_width=True)
 
 # Xác định trạng thái của ghế dựa trên Ghi Chú và Họ Tên
@@ -100,16 +100,59 @@ def get_status(row):
     else:
         return "VÀNG"
 
-st.markdown("---")
+# --- KHUNG FORM ĐĂNG KÝ NGAY TRÊN MÀN HÌNH CHÍNH ---
+selected_seat = st.session_state.get('selected_seat', '')
+
+if selected_seat:
+    st.markdown("---")
+    with st.container():
+        st.success(f"🔥 BẠN ĐANG CHỌN VỊ TRÍ: **{selected_seat}**")
+        
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            user_ldap = st.text_input("Nhập LDAP ID (Mã nhân viên): *", key="input_ldap")
+            user_name = st.text_input("Nhập Họ Và Tên: *", key="input_name")
+        with col_f2:
+            user_bu = st.selectbox("Chọn Phòng Ban (BU):", LIST_BU, key="input_bu")
+            st.write("")
+            st.write("")
+        
+        col_btn1, col_btn2 = st.columns([1, 4])
+        with col_btn1:
+            if st.button("✅ Xác Nhận Đặt", type="primary"):
+                if not user_ldap.strip() or not user_name.strip():
+                    st.warning("⚠️ Vui lòng nhập đầy đủ LDAP ID và Họ Tên!")
+                else:
+                    clean_ldap = user_ldap.strip()
+                    existing_booking = df[df['LDAP ID'] == clean_ldap]
+                    
+                    if not existing_booking.empty:
+                        booked_seat = existing_booking.iloc[0]['Mã Chỗ Ngồi']
+                        st.error(f"❌ Chặn spam! LDAP **{clean_ldap}** đã đăng ký ghế **{booked_seat}** rồi. Mỗi nhân sự chỉ được sở hữu 1 chỗ duy nhất!")
+                    else:
+                        df.loc[df['Mã Chỗ Ngồi'] == selected_seat, 'Họ Và Tên'] = user_name.strip()
+                        df.loc[df['Mã Chỗ Ngồi'] == selected_seat, 'LDAP ID'] = clean_ldap
+                        df.loc[df['Mã Chỗ Ngồi'] == selected_seat, 'Phòng Ban (BU)'] = user_bu
+                        save_data(df)
+                        
+                        st.success(f"🎉 Đăng ký thành công ghế {selected_seat} cho {user_name} ({user_bu})!")
+                        st.session_state['selected_seat'] = ''
+                        st.rerun()
+        with col_btn2:
+            if st.button("❌ Hủy chọn lại"):
+                st.session_state['selected_seat'] = ''
+                st.rerun()
+    st.markdown("---")
+
 st.subheader("🪑 DANH SÁCH GHẾ THEO PHÂN KHU")
 
 # Các Tab phân khu
 tab1, tab2, tab3 = st.tabs(["Zone A (28 Bàn)", "Zone B (26 Bàn)", "Zone C (25 Bàn)"])
 
-def render_zone(zone_prefix, img_path, cols_per_row=7):
-    # Hiển thị ảnh sơ đồ riêng cho từng Zone nếu có
+def render_zone(zone_prefix, img_path, cols_per_row=4):
     if os.path.exists(img_path):
-        st.image(img_path, caption=f"Sơ đồ chi tiết {zone_prefix}", use_container_width=True)
+        with st.expander(f"📷 Xem sơ đồ chi tiết {zone_prefix}"):
+            st.image(img_path, caption=f"Sơ đồ chi tiết {zone_prefix}", use_container_width=True)
         st.markdown("---")
         
     zone_df = df[df['Phân Khu'].astype(str).str.startswith(zone_prefix)].reset_index(drop=True)
@@ -131,53 +174,23 @@ def render_zone(zone_prefix, img_path, cols_per_row=7):
                     if status == "XANH":
                         st.success(f"**{code}**\n\n👤 {name}")
                     elif status == "VÀNG":
-                        if st.button(f"🟡 {code}\n(Chọn chỗ)", key=f"btn_{code}"):
+                        if st.button(f"🟡 {code}\n(Chọn)", key=f"btn_{code}"):
                             st.session_state['selected_seat'] = code
+                            st.rerun()
                     else:
-                        st.error(f"**{code}**\n\n🔒 Khóa/Hỏng")
+                        st.error(f"**{code}**\n\n🔒 Khóa")
 
 with tab1:
-    render_zone("Zone A", IMG_ZONE_A, 7)
+    render_zone("Zone A", IMG_ZONE_A, 4)
 
 with tab2:
-    render_zone("Zone B", IMG_ZONE_B, 8)
+    render_zone("Zone B", IMG_ZONE_B, 4)
 
 with tab3:
-    render_zone("Zone C", IMG_ZONE_C, 7)
+    render_zone("Zone C", IMG_ZONE_C, 4)
 
-# --- Sidebar xử lý đặt chỗ ---
-st.sidebar.header("📋 FORM ĐĂNG KÝ CHỖ NGỒI")
-selected_seat = st.session_state.get('selected_seat', '')
-
-if selected_seat:
-    st.sidebar.info(f"Đang chọn vị trí: **{selected_seat}**")
-    
-    user_ldap = st.sidebar.text_input("Nhập LDAP ID (Mã nhân viên):", key="input_ldap")
-    user_name = st.sidebar.text_input("Nhập Họ Và Tên:", key="input_name")
-    user_bu = st.sidebar.selectbox("Chọn Phòng Ban (BU):", LIST_BU, key="input_bu")
-    
-    if st.sidebar.button("Xác Nhận Đặt Chỗ"):
-        if not user_ldap.strip() or not user_name.strip():
-            st.sidebar.warning("⚠️ Vui lòng nhập đầy đủ LDAP ID và Họ Tên!")
-        else:
-            clean_ldap = user_ldap.strip()
-            existing_booking = df[df['LDAP ID'] == clean_ldap]
-            
-            if not existing_booking.empty:
-                booked_seat = existing_booking.iloc[0]['Mã Chỗ Ngồi']
-                st.sidebar.error(f"❌ Chặn spam! LDAP **{clean_ldap}** đã đăng ký ghế **{booked_seat}** rồi. Mỗi nhân sự chỉ được sở hữu 1 chỗ duy nhất!")
-            else:
-                df.loc[df['Mã Chỗ Ngồi'] == selected_seat, 'Họ Và Tên'] = user_name.strip()
-                df.loc[df['Mã Chỗ Ngồi'] == selected_seat, 'LDAP ID'] = clean_ldap
-                df.loc[df['Mã Chỗ Ngồi'] == selected_seat, 'Phòng Ban (BU)'] = user_bu
-                save_data(df)
-                
-                st.sidebar.success(f"✅ Đăng ký thành công ghế {selected_seat} cho {user_name} ({user_bu})!")
-                st.session_state['selected_seat'] = ''
-                st.rerun()
-else:
-    st.sidebar.write("👉 Bấm vào nút **(Chọn chỗ)** ở các ô màu vàng trên sơ đồ để tiến hành đăng ký.")
-
-st.sidebar.markdown("---")
-with open(FILE_PATH, "rb") as f:
-    st.sidebar.download_button("📥 Tải File Excel Cập Nhật", f, file_name="Danh_Sach_Cho_Ngoi_Cap_Nhat.xlsx")
+# --- TẢI FILE EXCEL (Dành cho Quản trị viên) ---
+st.markdown("---")
+with st.expander("🛠️ Dành cho Quản trị viên (Admin)"):
+    with open(FILE_PATH, "rb") as f:
+        st.download_button("📥 Tải File Excel Danh Sách Chỗ Ngồi", f, file_name="Danh_Sach_Cho_Ngoi_Cap_Nhat.xlsx")
